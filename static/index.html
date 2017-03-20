@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width" />
     <meta name="license" content="
         Copyright 2013 Google, Abram Hindle
+        Copyright 2017 Github.com/Joduro
         
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
@@ -176,12 +177,14 @@ function addEntity(entity, data) {
     //drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just modified!
 
-    sendJSONXMLHTTPRequest("/entity/" + entity, data, drawNextFrame);
+    //sendJSONXMLHTTPRequest("/entity/" + entity, data, drawNextFrame);
     
     // Even though it says to use XHTML to send the request I am going to use 
     // sockets to update.
-
-    //socket.send( JSON.stringify( {"entity": entity, "data": data, "type":"set"}));
+    var packet = {};
+    packet[entity] = data;
+    //console.log("this is packet[entity]: " + packet[entity]);
+    socket.send(JSON.stringify(packet));
 }
 var counter = 0;
 function addEntityWithoutName(data) {
@@ -352,22 +355,19 @@ function wsSetup() {
             //alert("Received This: " + msg.data);
 
             var msg = JSON.parse(msg.data);
-            switch(msg.type) {
-
-            case "world":
+            if(msg.type == "world"){
                 newWorld = msg.data;
                 //alert("received a newWorld: " + newWorld)
                 console.log(newWorld);
                 world = newWorld;
                 drawNextFrame();
-                break;
+            }
 
-            case "set":
-                newData = msg.data;
-                newEntity = msg.entity;
+            else{
+                newEntity= Object.keys(msg)[0];
+                newData = msg[newEntity];
                 showEntity(newEntity, newData);
                 console.log(newEntity + ":" + newData);
-                break;
             }
             drawNextFrame();
 

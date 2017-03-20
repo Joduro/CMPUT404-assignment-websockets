@@ -43,6 +43,7 @@ class World:
         self.update_listeners( entity )
 
     def set(self, entity, data):
+    	print("setting")
         self.space[entity] = data
         self.update_listeners( entity )
 
@@ -72,10 +73,7 @@ def send_all_json(obj):
 
 def set_listener( entity, data ):
     ''' do something with the update ! '''
-    obj = dict()
-    obj["entity"] = entity
-    obj["data"] = data
-    obj["type"] = "set"
+    obj = {entity:data}
     send_all_json(obj)
 
 myWorld.add_set_listener( set_listener )
@@ -105,7 +103,13 @@ def read_ws(ws,client):
             if (msg is not None):
                 packet = json.loads(msg)
 
-                myWorld.set(packet["entity"], packet["data"])
+                #the following 2 lines were created by using code written by systempuntoout 
+        		#(https://stackoverflow.com/users/130929/systempuntoout) on stack overflow 
+        		#(https://stackoverflow.com/questions/3545331/how-can-i-get-dictionary-key-as-variable-directly-in-python-not-by-searching-fr) 
+        		#Accessed March 2017
+                for key in packet:
+                 	myWorld.set(key, packet[key])
+
                 #send_all_json( packet )
             else:
                 break
@@ -117,16 +121,12 @@ def subscribe_socket(ws):
     '''Fufill the websocket URL of /subscribe, every update notify the
        websocket and read updates from the websocket '''
     # XXX: TODO IMPLEMENT ME
-    #world = World()
-    #clients.append(client)
-
     client = Client()
     clients.append(client)
     g = gevent.spawn( read_ws, ws, client )
 
-    #print "Subscribing"   
+    print("New Client. Sending the current world!") 
     try:
-    	print("New Client. Sending the current world!")
     	ws.send(json.dumps({"data":myWorld.world(), "type":"world"}))
         while True:
             # block here
