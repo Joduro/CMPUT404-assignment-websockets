@@ -77,15 +77,30 @@ world = {};
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
     with(context) {
-        beginPath();                
-        lineWidth = 3;
+        beginPath();              
+        lineWidth = 1;
         var x = entity["x"];
         var y = entity["y"];
         //moveTo(x,y);
         fillStyle = entity["colour"];
+        fill();
         strokeStyle = fillStyle;
         arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
         stroke();                                
+    }
+}
+function drawText(context,entity) {
+    with(context) {
+        beginPath();              
+        lineWidth = 3;
+        var x = entity["x"];
+        var y = entity["y"];
+        var text = entity["text"];
+        //moveTo(x,y);
+        fillStyle = entity["colour"];
+        strokeStyle = fillStyle;
+        font= "30px Arial";
+        fillText(text,x-10,y+10);                               
     }
 }
 
@@ -113,7 +128,12 @@ function renderFrame() {
     clearFrame();
     for (var key in world) {
         var entity = world[key];
-        drawCircle(context,prepEntity(entity));
+        if (entity["text"]){
+            drawText(context, entity);
+        }
+        else{
+            drawCircle(context,prepEntity(entity));
+        }
     }
 }
 
@@ -155,7 +175,13 @@ function addEntity(entity, data) {
     //world[entity] = data;
     //drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just modified!
+
     sendJSONXMLHTTPRequest("/entity/" + entity, data, drawNextFrame);
+    
+    // Even though it says to use XHTML to send the request I am going to use 
+    // sockets to update.
+
+    //socket.send( JSON.stringify( {"entity": entity, "data": data, "type":"set"}));
 }
 var counter = 0;
 function addEntityWithoutName(data) {
@@ -166,6 +192,29 @@ function addEntityWithoutName(data) {
 function showEntity(entity, data) {
     world[entity] = data;
     drawNextFrame();
+}
+
+//Returns colours of a very pretty rainbow as entities are added 
+function getColour() {
+    var current = counter%100;
+    if (current < 17){
+        return 'red';
+    }
+    else if (current < 34){
+        return 'orange';
+    }
+    else if (current < 50){
+        return 'yellow';
+    }
+    else if (current < 67){
+        return 'green';
+    }
+    else if (current < 84){
+        return 'blue';
+    }
+    else if (current < 101){
+        return 'purple';
+    }
 }
 
 // canvas + mouse/touch is complicated 
@@ -267,16 +316,15 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':getColour(),'text':'X'});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x,'y':y,'colour':getColour(),'text':'X'});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
-                          'radius':10});
+    addEntityWithoutName({'x':x,'y':y,'colour':getColour(),'radius':10});
 });
 
 
@@ -291,7 +339,7 @@ function wsSetup() {
     socket = new WebSocket(url);
     socket.onopen = function() {
         //XXX: TODO What are you going to do here?
-        drawFrame();
+        drawNextFrame();
 
     };
     socket.onerror = function(msg) {
@@ -308,7 +356,7 @@ function wsSetup() {
 
             case "world":
                 newWorld = msg.data;
-                alert("received a newWorld: " + newWorld)
+                //alert("received a newWorld: " + newWorld)
                 console.log(newWorld);
                 world = newWorld;
                 drawNextFrame();
@@ -320,10 +368,6 @@ function wsSetup() {
                 showEntity(newEntity, newData);
                 console.log(newEntity + ":" + newData);
                 break;
-
-            //console.log("hello");
-            //world = gottenWorld;
-            
             }
             drawNextFrame();
 
@@ -339,7 +383,7 @@ wsSetup();
 
 
 // 30 frames per second
-setInterval( update, 1000/10.0);
+setInterval( update, 1000/30);
 
 
     </script>

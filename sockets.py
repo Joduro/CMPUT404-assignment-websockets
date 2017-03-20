@@ -104,7 +104,9 @@ def read_ws(ws,client):
             print "WS RECV: %s" % msg
             if (msg is not None):
                 packet = json.loads(msg)
-                send_all_json( packet )
+
+                myWorld.set(packet["entity"], packet["data"])
+                #send_all_json( packet )
             else:
                 break
     except:
@@ -122,14 +124,14 @@ def subscribe_socket(ws):
     clients.append(client)
     g = gevent.spawn( read_ws, ws, client )
 
-    print "Subscribing"   
+    #print "Subscribing"   
     try:
     	print("New Client. Sending the current world!")
     	ws.send(json.dumps({"data":myWorld.world(), "type":"world"}))
         while True:
             # block here
             msg = client.get()
-            print "Got a message!"
+            #print "Got a message!"
             ws.send(msg)
     except Exception as e:# WebSocketError as e:
         print "WS Error %s" % e
@@ -153,7 +155,7 @@ def flask_post_json():
 def update(entity):
     '''update the entities via this interface'''
     body = flask_post_json()
-    print("Adding Entity: " + str(body))
+    #print("Adding Entity: " + str(body))
     #print(jsonify(body))
     myWorld.set(entity, body)
     return jsonify(body)
@@ -167,7 +169,7 @@ def world():
 @app.route("/entity/<entity>")    
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
-    Print("Sending Entity: " + myworld.get(entity))
+    #Print("Sending Entity: " + myworld.get(entity))
     return jsonify(myWorld.get(entity))
 
 @app.route("/clear", methods=['POST','GET'])
@@ -175,6 +177,7 @@ def clear():
     '''Clear the world out!'''
     print("Clearing World")
     myWorld.clear()
+    send_all_json({"data":'{}', "type":"world"})
     return '{}'
 
 
